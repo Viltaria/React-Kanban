@@ -1,26 +1,10 @@
 import React from 'react';
+import Immutable from 'immutable';
+import { connect } from 'react-redux';
 
 import Form from './Form.jsx';
 
 var Card = React.createClass({
-  getInitialState() {
-    return {
-      title: '',
-      priority: '',
-      createdBy: '',
-      assignedTo: '',
-      status: '',
-    };
-  },
-  componentDidMount() {
-    this.setState({
-      title: this.props.data.title,
-      priority: this.props.data.priority,
-      createdBy: this.props.data.createdBy,
-      assignedTo: this.props.data.assignedTo,
-      status: this.props.data.status,
-    });
-  },
   dragStart(event) {
     var cardData = {
       id: this.props.data._id,
@@ -29,25 +13,24 @@ var Card = React.createClass({
     event.dataTransfer.setData('text', JSON.stringify(cardData));
   },
   handleStatusLeft () {
-    var status = this.props.data.status.replace(/\s/g, '');;
-    status = {Queue: 'Done', Done: 'In Progress', InProgress: 'Queue'}[status];
-    this.createReq('status', status);
+    var newStatus = this.props.data.status.replace(/\s/g, '');;
+    newStatus = {Queue: 'Done', Done: 'In Progress', InProgress: 'Queue'}[newStatus];
+    this.createPutRequest('status', newStatus);
   },
   handleStatusRight () {
-    var status = this.props.data.status.replace(/\s/g, '');
-    status = {Queue: 'In Progress', InProgress: 'Done', Done: 'Queue'}[status];
-    this.createReq('status', status);
+    var newStatus = this.props.data.status.replace(/\s/g, '');
+    newStatus = {Queue: 'In Progress', InProgress: 'Done', Done: 'Queue'}[newStatus];
+    this.createPutRequest('status', newStatus);
   },
   cyclePriority(){
-    var thePriority = this.state.priority.toLowerCase();
-    if('low medium high blocker'.indexOf(thePriority) < 0) {
-      thePriority = 'blocker';
+    var newPriority = this.props.data.priority.toLowerCase();
+    if('low medium high blocker'.includes(newPriority)) {
+     newPriority = 'blocker';
     }
-    thePriority =  {low: 'Medium', medium: 'High', high: 'Blocker', blocker: 'Low'}[thePriority];
-    this.createReq('priority', thePriority);
-    this.setState({priority: thePriority}); //added to fix bug where cycle priority wasn't working with edit
+   newPriority =  {low: 'Medium', medium: 'High', high: 'Blocker', blocker: 'Low'}[newPriority];
+    this.createPutRequest('priority', newPriority);
   },
-  createReq (fieldName, fieldValue) {
+  createPutRequest (fieldName, fieldValue) {
     var myRequest = {
       id : this.props.data._id || 0,
     };
@@ -74,26 +57,20 @@ var Card = React.createClass({
     }))
   },
   editItem () { //on edit button click
-    if(!this.props.editFormsBeingShown) {
-      this.deleteItem(); //delete item so no duplicates since the form is just be rerendered
-      try {
-        this.props.renderEditFormQueue(this.state);
-      } catch (e) {
-        try {
-          this.props.renderEditFormInProgress(this.state);
-        } catch (e) {
-          this.props.renderEditFormDone(this.state);
-        }
-      }
+     console.log(`Queue: ${this.props.data.status=='Queue'}, In Progress: ${this.props.data.status=='In Progress'}, Done: ${this.props.data.status=='Done'}`);
+    if(this.props.editFormsBeingShown === 0) {
+      if(this.props.data.status=='Queue') this.props.renderEditFormQueue(this.props.data);
+      if(this.props.data.status=='In Progess') this.props.renderEditFormInProgress(this.props.data);
+      if(this.props.data.status=='Done') this.props.renderEditFormDone(this.props.data);
     }
   },
   timestamp () {
-    var date = new Date(this.props.data.createdAt);
-    return `${date.getMonth()}/${date.getDay()}/${date.getFullYear() - 2000}`;
+    var date = new Date(this.props.data.updatedAt);
+    return date.toLocaleTimeString('en-US', { hour12: false });
   },
   render() {
     return (
-       <div key={this.props.data._id} className={`card ${this.state.priority}`} data-id={this.props.data._id} data-status={this.state.status} data-updatedat={this.props.data.updatedAt} draggable="true" onDragStart={this.dragStart}>
+       <div key={this.props.data._id} className={`card ${this.props.data.priority}`} data-id={this.props.data._id} data-status={this.props.data.status} data-updatedat={this.props.data.updatedAt} draggable="true" onDragStart={this.dragStart}>
         <span onClick={this.deleteItem} className="close">&#120;</span>
         <span onClick={this.editItem} className="edit">&#9998;</span>
         <span className="timestamp">{this.timestamp()}</span>
@@ -109,4 +86,7 @@ var Card = React.createClass({
   }
 });
 
+
 export default Card;
+
+

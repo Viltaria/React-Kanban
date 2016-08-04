@@ -1,15 +1,24 @@
+//React
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Router, Route, hashHistory } from 'react-router';
 
-// import Login from './static/login.jsx';
-// import newCard from './static/newCard.jsx';
-// import Signup from './static/signup.jsx';
-import Form from './react/Form.jsx';
+//App containing all parts
 import App from './App.js';
 
+//Redux
+import { Provider } from 'react-redux';
+import * as reducers from './reducers';
+import { createStore, combineReducers } from 'redux';
+var reducer = combineReducers(reducers);
+var store = createStore(reducer);
+
+
+
 ReactDOM.render(
-  <Router history={hashHistory}>
-    <Route path='*' component={App} />
-  </Router>, document.getElementById('content')
+  <Provider store={store}>
+    <Router history={hashHistory}>
+      <Route path='*' component={App} />
+    </Router>
+  </Provider>, document.getElementById('content')
 );

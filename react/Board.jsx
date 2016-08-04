@@ -3,24 +3,14 @@ import React from 'react';
 import Form from './Form.jsx';
 import Column from './Column.jsx';
 
+import Immutable from 'immutable';
+import {connect} from 'react-redux';
+
 var Board =  React.createClass({
-  getInitialState: function(){
-    return {
-      showForm:false,
-      showEditFormQueue:false,
-      showEditFormQueueState: {},
-      showEditFormInProgress:false,
-      showEditFormInProgressState: {},
-      showEditFormDone:false,
-      showEditFormDoneState: {},
-      editFormsBeingShown: 0,
-    };
+  componentDidMount() {
+    this.updateBoard();
   },
   updateBoard () {
-  //passed down to children as a prop to update board
-    this.queryDatabase();
-  },
-  componentDidMount() {
     this.queryDatabase();
   },
   queryDatabase () {
@@ -30,64 +20,36 @@ var Board =  React.createClass({
     req.send();
   },
   loadData (data) {
-    this.setState({data:JSON.parse(data.currentTarget.response)});
+    this.props.updateBoard(JSON.parse(data.currentTarget.response));
   },
   renderForm () {
-    this.setState({
-      showForm:true,
-    });
+    this.props.renderForm();
   },
   renderEditFormQueue (state) {
-    this.setState({
-      showEditFormQueue:true,
-      showEditFormQueueState: state,
-      editFormsBeingShown: 1,
-    });
+    this.props.renderEditFormQueue(state);
   },
   renderEditFormInProgress (state) {
-    this.setState({
-      showEditFormInProgress:true,
-      showEditFormInProgressState: state,
-      editFormsBeingShown: 1,
-    });
+    this.props.renderEditFormInProgress(state);
   },
   renderEditFormDone (state) {
-    this.setState({
-      showEditFormDone:true,
-      showEditFormDoneState: state,
-      editFormsBeingShown: 1,
-    });
+    this.props.renderEditFormDone(state);
   },
   hideForm () {
-    this.setState({
-      showForm:false,
-    });
+    this.props.hideForm();
   },
   hideEditFormQueue () {
-    this.setState({
-      showEditFormQueue: false,
-      showEditFormQueueState: {},
-      editFormsBeingShown: 0,
-    })
+    this.props.hideEditFormQueue();
   },
   hideEditFormInProgress () {
-    this.setState({
-      showEditFormInProgress: false,
-      showEditFormInProgressState: {},
-      editFormsBeingShown: 0,
-    })
+    this.props.hideEditFormInProgress();
   },
   hideEditFormDone () {
-    this.setState({
-      showEditFormDone: false,
-      showEditFormDoneState: {},
-      editFormsBeingShown: 0,
-    })
+    this.props.hideEditFormDone();
   },
   render() {
     return (
       <div>
-        <Column editFormsBeingShown={this.state.editFormsBeingShown} showEditFormQueueState={this.state.showEditFormQueueState}  showEditFormInProgressState={this.state.showEditFormInProgressState}  showEditFormDoneState={this.state.showEditFormDoneState} showEditFormQueue={this.state.showEditFormQueue} showEditFormInProgress={this.state.showEditFormInProgress} showEditFormDone={this.state.showEditFormDone} renderEditFormQueue={this.renderEditFormQueue} hideEditFormQueue={this.hideEditFormQueue} renderEditFormInProgress={this.renderEditFormInProgress} hideEditFormInProgress={this.hideEditFormInProgress} renderEditFormDone={this.renderEditFormDone} hideEditFormDone={this.hideEditFormDone} showForm={this.state.showForm} hideForm={this.hideForm} updateBoard={this.updateBoard} data={this.state.data} />
+        <Column editFormsBeingShown={this.props.editFormsBeingShown} showEditFormQueueState={this.props.showEditFormQueueState} showEditFormInProgressState={this.props.showEditFormInProgressState}  showEditFormDoneState={this.props.showEditFormDoneState} showEditFormQueue={this.props.showEditFormQueue} showEditFormInProgress={this.props.showEditFormInProgress} showEditFormDone={this.props.showEditFormDone} renderEditFormQueue={this.renderEditFormQueue} hideEditFormQueue={this.hideEditFormQueue} renderEditFormInProgress={this.renderEditFormInProgress} hideEditFormInProgress={this.hideEditFormInProgress} renderEditFormDone={this.renderEditFormDone} hideEditFormDone={this.hideEditFormDone} showForm={this.props.showForm} hideForm={this.hideForm} updateBoard={this.updateBoard} data={this.props.data} />
         <div className="center">
           <span onClick={this.renderForm} className="newCard">&#43;</span>
         </div>
@@ -95,4 +57,53 @@ var Board =  React.createClass({
     )
   }
 });
-export default Board;
+var mapStateToProps = (state) => {
+  var s = state.boardReducer.toJS();
+  return {
+    data: s.data,
+    showForm: s.showForm,
+    showEditFormQueue: s.showEditFormQueue,
+    showEditFormQueueState: s.showEditFormQueueState,
+    showEditFormInProgress: s.showEditFormInProgress,
+    showEditFormInProgressState: s.showEditFormInProgressState,
+    showEditFormDone: s.showEditFormDone,
+    showEditFormDoneState: s.showEditFormDoneState,
+    editFormsBeingShown: s.editFormsBeingShown,
+  }
+}
+
+var mapDispatchToProps = (dispatch) => {
+  return {
+    updateBoard: (data) => {
+      dispatch({
+        type: 'UPDATE_BOARD',
+        data,
+      })
+    },
+
+    renderForm: () => {dispatch({type: 'SHOW_FORM'})},
+    renderEditFormQueue: (status) => {
+      dispatch({
+        type:'SHOW_EDIT_FORM_QUEUE',
+        status,
+      })
+    },
+    renderEditFormInProgress: (status) => {
+      dispatch({
+        type:'SHOW_EDIT_FORM_INPROGRESS',
+        status,
+      })
+    },
+    renderEditFormDone: (status) => {
+      dispatch({
+        type:'SHOW_EDIT_FORM_DONE',
+        status,
+      })
+    },
+    hideForm: () => {dispatch({type:'HIDE_FORM'})},
+    hideEditFormQueue: () => {dispatch({type:'HIDE_EDIT_FORM_QUEUE'})},
+    hideEditFormInProgress: () => {dispatch({type:'HIDE_EDIT_FORM_INPROGRESS'})},
+    hideEditFormDone: () => {dispatch({type:'HIDE_EDIT_FORM_DONE'})},
+  }
+};
+export default connect(mapStateToProps,mapDispatchToProps)(Board);

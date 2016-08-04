@@ -31,19 +31,27 @@ var cardSchema = new Schema({
 
 cardSchema.plugin(timestamps);
 mongoose.model('Card', cardSchema);
- var Card = mongoose.model('Card', cardSchema);
+var Card = mongoose.model('Card', cardSchema);
 
 app.use(methodOverride());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 
 app.use(express.static(__dirname));
+
+app.use(function(req, res, next) {
+  console.log('method: ',req.method, ' url: ',req.url);
+  next();
+ });
+
 app.use(webpackDevMiddleware(compiler, {
   publicPath: config.output.publicPath,
   stats: {
     colors: true,
   }
 }));
+
+
 
 app.get('/', (req, res) => {
   return res.render('index');
@@ -59,16 +67,8 @@ app.get('/data', (req, res) => {
 
 
 app.put('/edit/', (req, res) => {
-  // now updates a single field
-   var reqObject = {};
-    for(var key in req.body) {
-      if(req.body.hasOwnProperty(key) && key != 'id') {
-        reqObject[key] = req.body[key];
-      }
-    }
-  // reqObject is an object with field name and value, i.e., { priority : 'High'}
   Card.findByIdAndUpdate(req.body.id, {
-    $set: reqObject
+    $set: req.body
   },
   function (err, card) {
     if (err) return console.log('Error: ', err);
@@ -85,30 +85,23 @@ app.delete('/delete/', (req, res) => {
   });
 });
 
-var postsPerSecond = 0; //spam protection
 app.post('/', (req, res) => {
-  setInterval( () => {
-    postsPerSecond = 0;
-  }, 1000); //clears every second
-  if(postsPerSecond === 0) {
-    var body = req.body;
-    var newCard = new Card({
-      title: body.title || "Title",
-      priority: body.priority || "Priority",
-      status: body.status || "Queue",
-      createdBy: body.createdby || "Created By",
-      assignedTo: body.assignedto || "Assigned To",
-    });
-    newCard.save( (err, data) => {
-      if(err) console.log(err);
-      else {
-        console.log('Successfully saved.');
-      }
-    });
-    postsPerSecond++;
-  } else {
-    console.log('Could not save. Spam protection invoked.');
-  }
+  var body = req.body;
+  var newCard = new Card({
+    title: body.title || "Title",
+    priority: body.priority || "Priority",
+    status: body.status || "Queue",
+    createdBy: body.createdby || "Created By",
+    assignedTo: body.assignedto || "Assigned To",
+  });
+  newCard.save( (err, data) => {
+    if(err) {
+      console.log(err);
+    } else {
+      let saveDate = new Date();
+      console.log('Successfully saved. ', saveDate.toLocaleTimeString('en-US', { hour12: false }));
+    }
+  });
 });
 
 app.listen(PORTNUM, () => {
